@@ -57,6 +57,7 @@
 - [x] 抽取 `OpportunityService`，让 CLI/API/后续任务复用同一评分链路。
 - [x] 前端改为请求 API。
 - [x] FastAPI 托管前端页面，打开根路径即可查看真实机会看板。
+- [x] `/api/opportunities` 增加短缓存和 `refresh=true` 强制刷新参数。
 - [ ] 添加缓存和错误提示。
 
 ## 提醒 Sprint

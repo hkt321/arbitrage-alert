@@ -98,6 +98,9 @@ Endpoints:
 GET http://127.0.0.1:8000/health
 GET http://127.0.0.1:8000/api/valuation-signals
 GET http://127.0.0.1:8000/api/opportunities
+GET http://127.0.0.1:8000/api/opportunities?refresh=true
 ```
+
+`/api/opportunities` uses a short in-memory cache. Add `refresh=true` to force a live refresh.
 
 后续接入真实行情后，再升级为前后端服务。

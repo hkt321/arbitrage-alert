@@ -53,15 +53,22 @@
     };
   }
 
-  async function fetchOpportunities() {
-    const response = await fetch(`${API_BASE}/api/opportunities`, {
+  async function fetchOpportunities(options = {}) {
+    const params = new URLSearchParams();
+    if (options.refresh) params.set("refresh", "true");
+    const query = params.toString() ? `?${params.toString()}` : "";
+
+    const response = await fetch(`${API_BASE}/api/opportunities${query}`, {
       headers: { Accept: "application/json" }
     });
     if (!response.ok) {
       throw new Error(`API ${response.status}`);
     }
     const payload = await response.json();
-    return (payload.data || []).map(mapOpportunity);
+    return {
+      data: (payload.data || []).map(mapOpportunity),
+      meta: payload.meta || {}
+    };
   }
 
   app.apiClient = {

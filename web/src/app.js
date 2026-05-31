@@ -7,6 +7,7 @@
     category: "全部",
     funds: [],
     lastSource: "api",
+    lastMeta: {},
     refreshIntervalSeconds: 60,
     search: "",
     sortDir: "desc",
@@ -97,13 +98,17 @@
     updatedAt.textContent = message;
   }
 
-  async function loadData() {
+  async function loadData(options = {}) {
     refreshButton.disabled = true;
-    setStatus("正在刷新真实行情...");
+    setStatus(options.refresh ? "正在刷新真实行情..." : "正在加载机会列表...");
     try {
-      state.funds = await fetchOpportunities();
+      const payload = await fetchOpportunities({ refresh: options.refresh });
+      state.funds = payload.data;
+      state.lastMeta = payload.meta || {};
       state.lastSource = "api";
-      setStatus(`更新时间：${new Date().toLocaleString("zh-CN", { hour12: false })}`);
+      const cacheText = state.lastMeta.cached ? "缓存" : "实时";
+      const asOf = state.lastMeta.asOf ? new Date(state.lastMeta.asOf).toLocaleString("zh-CN", { hour12: false }) : new Date().toLocaleString("zh-CN", { hour12: false });
+      setStatus(`更新时间：${asOf}（${cacheText}）`);
     } catch (error) {
       state.funds = app.mockFunds || [];
       state.lastSource = "mock";
@@ -120,7 +125,7 @@
     if (!state.autoRefresh) return;
 
     const intervalMs = Math.max(state.refreshIntervalSeconds, 15) * 1000;
-    refreshTimer = setInterval(loadData, intervalMs);
+    refreshTimer = setInterval(() => loadData({ refresh: true }), intervalMs);
   }
 
   document.querySelector(".tabs").addEventListener("click", (event) => {
@@ -157,7 +162,7 @@
     render();
   });
 
-  refreshButton.addEventListener("click", loadData);
+  refreshButton.addEventListener("click", () => loadData({ refresh: true }));
 
   autoRefresh.addEventListener("change", (event) => {
     state.autoRefresh = event.target.checked;
