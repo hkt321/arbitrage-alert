@@ -21,8 +21,8 @@
   }
 
   function renderReasonList(reasons) {
-    if (!reasons || reasons.length === 0) return "暂无阻断";
-    return reasons.slice(0, 3).join("、");
+    const items = reasons && reasons.length ? reasons.slice(0, 4) : ["暂无阻断"];
+    return `<ul class="reason-list">${items.map((reason) => `<li>${reason}</li>`).join("")}</ul>`;
   }
 
   function renderFundRows(funds) {
@@ -35,9 +35,13 @@
         return `
           <tr class="${rowClass(fund)}">
             <td>
-              <button class="watch ${fund.watch ? "on" : ""}" data-code="${fund.code}" title="切换自选">${fund.watch ? "★" : "☆"}</button>
-              <span class="fund-name">${fund.name}</span>
-              <span class="fund-code">${fund.code}</span>
+              <div class="fund-cell">
+                <button class="watch ${fund.watch ? "on" : ""}" data-code="${fund.code}" title="切换自选">${fund.watch ? "★" : "☆"}</button>
+                <div class="fund-meta">
+                  <span class="fund-name">${fund.name}</span>
+                  <span class="fund-code">${fund.code}</span>
+                </div>
+              </div>
             </td>
             <td>
               <span>${formatNumber(fund.estimatedNav, 4)}</span>
@@ -50,7 +54,7 @@
             <td>
               <span>${formatNumber(fund.marketPrice, 3)}</span>
               <span class="${pctClass(fund.priceChangePct)}">${formatPct(fund.priceChangePct)}</span>
-              <small>买一 ${formatNumber(fund.bidPrice1, 3)} / 卖一 ${formatNumber(fund.askPrice1, 3)}</small>
+              <small>买 ${formatNumber(fund.bidPrice1, 3)} / 卖 ${formatNumber(fund.askPrice1, 3)}</small>
             </td>
             <td>
               <span>${formatTurnoverYuan(fund.turnoverYuan)}</span>
@@ -58,7 +62,7 @@
             </td>
             <td>
               <span class="${pctClass(fund.tradableEdgePct)}">${formatPct(fund.tradableEdgePct)}</span>
-              <small>成本 ${formatPct(fund.estimatedCostPct)} / 误差 ${formatPct(fund.errorBufferPct)}</small>
+              <small class="cost-line">成本 ${formatPct(fund.estimatedCostPct)} / 误差 ${formatPct(fund.errorBufferPct)}</small>
             </td>
             <td>
               <span>${confidenceLabel(fund.confidence)}</span>
@@ -66,7 +70,7 @@
             </td>
             <td>
               <span class="badge ${badgeClass(fund)}">${fund.levelLabel}</span>
-              <small>${renderReasonList(fund.reasons)}</small>
+              ${renderReasonList(fund.reasons)}
             </td>
           </tr>
         `;

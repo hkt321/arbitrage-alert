@@ -39,6 +39,7 @@ arbitrage-alert/
   docs/
     MODULES.md
     DATA_SOURCE_RESEARCH.md
+    DASHBOARD_GUIDE.md
     VALUATION_ENGINE.md
     TDX_INTEGRATION.md
     PRD.md

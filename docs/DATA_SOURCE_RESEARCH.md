@@ -412,3 +412,14 @@ QMT 实时行情 + 交易所/基金公告补充申赎字段
 - 银河证券官方客服信息：https://www.chinastock.com.cn/yhwz/service/yywd_yyzz.jsp?code=7240
 - 同花顺手机 Level-2：https://vaserviece.10jqka.com.cn/Level2/500fs/index.html
 - 同花顺 iFinD 数据接口 FAQ：https://ftwc.51ifind.com/gwstatic/static/ds_web/quantapi-web/help-center/faq.html
+
+## 第一批监控基金池说明
+
+当前基金池优先覆盖容易出现场内溢价、但又经常受到申购额度或估值滞后影响的品种：
+
+- 跨境 ETF：纳指、纳指 100、标普 500、中概互联网等，第一版优先使用 IOPV 或行情端参考净值。
+- QDII-LOF：原油、油气、标普 500、纳指 100、标普信息科技、全球芯片、医疗/生物科技等。
+- 商品 LOF：白银基金，第一版使用通达信候选期货合约中成交量最大的白银合约做代理估值。
+- 境内 ETF 样本：沪深 300ETF，用于验证 PCF、IOPV 和低误差场景。
+
+这些品种被加入“监控池”不等于一定可以套利。只有当申购/赎回状态、单日限额、成交额、盘口深度、费用、估值误差安全垫和模型置信度都过关时，看板才会给出“可执行”结论。海外指数和汇率实时源未接入前，相关 QDII-LOF 会被低置信度理由拦截或降级为观察。

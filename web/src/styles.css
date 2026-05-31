@@ -193,7 +193,8 @@ table {
 
 th,
 td {
-  padding: 14px 12px;
+  height: 82px;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: middle;
@@ -258,14 +259,8 @@ tbody tr.watching {
   background: #fff8ed;
 }
 
-td:first-child {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 2px 8px;
-}
-
 .watch {
-  grid-row: 1 / span 2;
+  flex: 0 0 28px;
   width: 28px;
   height: 28px;
   border: 0;
@@ -273,6 +268,19 @@ td:first-child {
   background: transparent;
   color: #99a3ad;
   cursor: pointer;
+}
+
+.fund-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.fund-meta {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
 }
 
 .watch.on {
@@ -303,6 +311,25 @@ td small {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.2;
+}
+
+.cost-line {
+  white-space: nowrap;
+}
+
+.reason-list {
+  display: grid;
+  gap: 3px;
+  margin: 6px 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  list-style: none;
+}
+
+.reason-list li {
+  min-width: 0;
 }
 
 .premium-cell span {

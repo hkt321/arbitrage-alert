@@ -36,6 +36,54 @@
       "confidence": "medium"
     },
     {
+      "id": "US_EQUITY_PROXY",
+      "name": "美国权益代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "CNY",
+      "confidence": "low",
+      "reasons": [
+        "海外指数实时源未接入，暂用最近官方净值低置信估值"
+      ]
+    },
+    {
+      "id": "US_TECH_PROXY",
+      "name": "美国科技代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "CNY",
+      "confidence": "low",
+      "reasons": [
+        "海外科技指数实时源未接入，暂用最近官方净值低置信估值"
+      ]
+    },
+    {
+      "id": "GLOBAL_CHIP_PROXY",
+      "name": "全球芯片代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "CNY",
+      "confidence": "low",
+      "reasons": [
+        "全球芯片实时代理源未接入，暂用最近官方净值低置信估值"
+      ]
+    },
+    {
+      "id": "US_HEALTHCARE_PROXY",
+      "name": "美国医疗代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "CNY",
+      "confidence": "low",
+      "reasons": [
+        "海外医疗指数实时源未接入，暂用最近官方净值低置信估值"
+      ]
+    },
+    {
       "id": "USDCNY",
       "name": "美元兑人民币",
       "kind": "fx",
