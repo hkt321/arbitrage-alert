@@ -19,11 +19,13 @@ web/src/
 ## 未来后端模块
 
 ```text
-backend/
+  backend/
   app/
+    api/                  # FastAPI 接口，当前提供 health / valuation-signals / opportunities
     config/               # 阈值、品种池、账户与渠道配置
     models/               # 统一数据模型
     providers/            # 行情源统一接口，当前含 TdxQuantProvider
+    services/             # 编排服务，当前含 OpportunityService
     api/                  # HTTP 接口
     collectors/           # 行情、公告、PCF、费用等采集器
     adapters/             # QMT、通达信、网页、第三方 API 适配器

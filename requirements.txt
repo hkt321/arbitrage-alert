@@ -1,0 +1,2 @@
+-r requirements-tdx.txt
+-r requirements-api.txt

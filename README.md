@@ -72,4 +72,26 @@ arbitrage-alert/
 web/index.html
 ```
 
+## API
+
+Install dependencies:
+
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements.txt
+```
+
+Run local API:
+
+```powershell
+.\.venv\Scripts\python -m uvicorn app.api.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+Endpoints:
+
+```text
+GET http://127.0.0.1:8000/health
+GET http://127.0.0.1:8000/api/valuation-signals
+GET http://127.0.0.1:8000/api/opportunities
+```
+
 后续接入真实行情后，再升级为前后端服务。
