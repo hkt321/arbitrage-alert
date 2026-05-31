@@ -52,10 +52,11 @@ backend/app/domain/valuation_signal_resolver.py
 
 职责：
 
-- `MarketSignalProvider` 只负责把通达信、人工配置、未来外部行情源转换为统一 `MarketSignal`。
+- `MarketSignalProvider` 只负责把通达信、通达信候选合约、人工配置、未来外部行情源转换为统一 `MarketSignal`。
 - `ValuationSignalResolver` 只负责按基金档案里的 `benchmarkSignalId` / `fxSignalId` 找到信号，并生成估值输入。
 - `ValuationEngine` 只消费统一后的信号，不直接关心行情来自通达信、网页还是 QMT。
 - 海外代理资产和汇率暂时允许 `manual` 占位，但必须在 `reasons` 中明确标低置信度，避免误判为真实高质量估值。
+- 期货主力合约列表当前不能稳定从通达信列表接口获取，因此用 `candidateCodes` 配置候选合约，并自动选择成交量最大的可用合约。
 
 ## 扩展规则
 

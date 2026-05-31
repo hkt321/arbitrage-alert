@@ -44,6 +44,8 @@
 - [x] 建立估值信号层，支持指数、代理资产、汇率输入。
 - [x] 实现 `MarketSignalProvider` 和 `ValuationSignalResolver`。
 - [x] 将评分链路从手填 `proxyReturnPct/fxReturnPct` 升级为信号配置驱动。
+- [x] 接入通达信候选期货合约信号，自动选择成交量最大的沪银/原油代理合约。
+- [x] 将通达信涨跌幅统一为 `Now / LastClose - 1` 计算，规避原始字段口径不稳定。
 - [ ] 实现估值误差回放与滚动校准。
 - [ ] 向券商确认 QMT / miniQMT 开通门槛和 Level-2 费用。
 - [ ] 向通达信确认 TdxQuant 可用版本、授权和费用。

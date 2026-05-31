@@ -14,6 +14,7 @@ from app.models.quote import QuoteSnapshot
 from app.providers.eastmoney_fund_status_provider import EastmoneyFundStatusProvider
 from app.providers.market_signal_provider import MarketSignalProvider
 from app.providers.tdx_pcf_provider import TdxPcfProvider
+from app.providers.tdx_quant_provider import TdxQuantProvider
 
 
 class DomainTest(unittest.TestCase):
@@ -196,6 +197,29 @@ class DomainTest(unittest.TestCase):
         self.assertEqual(signal.source, "manual")
         self.assertEqual(signal.confidence, "low")
 
+    def test_tdx_quote_change_pct_prefers_price_ratio(self):
+        quote = TdxQuantProvider()._to_quote_snapshot(
+            "AG2608.SHF",
+            {
+                "Now": "18323",
+                "LastClose": "18206",
+                "Open": "18294",
+                "Max": "18485",
+                "Min": "18060",
+                "Volume": "508787",
+                "Amount": "13952405.00",
+                "Buyp": ["18322"],
+                "Buyv": ["5"],
+                "Sellp": ["18323"],
+                "Sellv": ["3"],
+                "Jjjz": "0",
+                "Average": "18281",
+                "ZAFPre3": "0.00",
+            },
+        )
+
+        self.assertAlmostEqual(quote.change_pct, 0.6426452817752448)
+
     def test_valuation_engine_uses_signal_inputs(self):
         profile = FundProfile.from_dict(
             {
@@ -262,6 +286,60 @@ class DomainTest(unittest.TestCase):
         self.assertAlmostEqual(valuation.estimated_nav, 1.0302)
         self.assertEqual(valuation.confidence, "low")
         self.assertEqual(valuation.inputs["signals"]["benchmark"]["id"], "BENCH")
+
+    def test_commodity_proxy_uses_benchmark_without_fx(self):
+        profile = FundProfile.from_dict(
+            {
+                "code": "161226.SZ",
+                "name": "测试商品LOF",
+                "assetType": "COMMODITY-LOF",
+                "valuationModel": "commodity_proxy",
+                "trackingIndexCode": "SILVER",
+                "lastOfficialNav": 2,
+                "benchmarkSignalId": "SILVER_PROXY",
+                "subscriptionStatus": "open",
+                "redemptionStatus": "open",
+                "purchaseLimitYuan": 100_000,
+                "feePct": 0.1,
+                "slippageBufferPct": 0.2,
+                "errorBufferPct": 1,
+                "confidenceFloor": "medium",
+            }
+        )
+        quote = QuoteSnapshot(
+            code="161226.SZ",
+            market_price=2.1,
+            prev_close=2,
+            open_price=2,
+            high_price=2.1,
+            low_price=2,
+            volume=10_000_000,
+            turnover_yuan=100_000_000,
+            bid_price1=2.09,
+            bid_volume1=100_000,
+            ask_price1=2.1,
+            ask_volume1=100_000,
+            reference_nav=None,
+            average_price=2.05,
+            change_pct=5,
+            raw={},
+        )
+        signals = ValuationSignalSet(
+            benchmark=MarketSignal(
+                id="SILVER_PROXY",
+                name="Silver",
+                kind="benchmark",
+                return_pct=3,
+                source="tdx_candidate_quote",
+                confidence="medium",
+            )
+        )
+
+        valuation = ValuationEngine().value(profile, quote, signals)
+
+        self.assertAlmostEqual(valuation.estimated_nav, 2.06)
+        self.assertEqual(valuation.model, "commodity_proxy")
+        self.assertEqual(valuation.confidence, "medium")
 
 
 if __name__ == "__main__":

@@ -26,6 +26,8 @@ class MarketSignalProvider:
             signal = self._missing_signal(signal_id)
         elif config.get("source") == "tdx_quote":
             signal = self._tdx_quote_signal(signal_id, config)
+        elif config.get("source") == "tdx_candidate_quote":
+            signal = self._tdx_candidate_quote_signal(signal_id, config)
         elif config.get("source") == "manual":
             signal = self._manual_signal(signal_id, config)
         else:
@@ -33,6 +35,75 @@ class MarketSignalProvider:
 
         self._cache[signal_id] = signal
         return signal
+
+    def _tdx_candidate_quote_signal(self, signal_id: str, config: dict[str, Any]) -> MarketSignal:
+        codes = config.get("candidateCodes", [])
+        if not isinstance(codes, list) or not codes:
+            return self._base_signal(
+                signal_id,
+                config,
+                return_pct=None,
+                source="tdx_candidate_quote",
+                confidence="none",
+                reasons=["候选合约列表为空"],
+            )
+
+        if self.quote_provider is None:
+            return self._base_signal(
+                signal_id,
+                config,
+                return_pct=None,
+                source="tdx_candidate_quote",
+                confidence="none",
+                reasons=["缺少通达信行情 Provider"],
+            )
+
+        quotes = []
+        failed: list[str] = []
+        for code in codes:
+            try:
+                quote = self.quote_provider.get_quote(str(code))
+                if quote.market_price is not None:
+                    quotes.append(quote)
+            except Exception:
+                failed.append(str(code))
+
+        if not quotes:
+            return self._base_signal(
+                signal_id,
+                config,
+                return_pct=None,
+                source="tdx_candidate_quote",
+                confidence="none",
+                reasons=["候选合约均无法获取行情"],
+            )
+
+        selected = max(quotes, key=lambda item: item.volume or 0)
+        return_pct = self._quote_return_pct(selected)
+        reasons = [f"使用成交量最大候选合约 {selected.code}"]
+        if failed:
+            reasons.append(f"部分候选合约不可用: {', '.join(failed)}")
+        if return_pct is None:
+            reasons.append("无法从候选合约计算涨跌幅")
+
+        return MarketSignal(
+            id=signal_id,
+            name=config.get("name", signal_id),
+            kind=config.get("kind", "benchmark"),
+            return_pct=return_pct,
+            source="tdx_candidate_quote",
+            price=selected.market_price,
+            prev_close=selected.prev_close,
+            currency=config.get("currency"),
+            confidence=config.get("confidence", "medium") if return_pct is not None else "none",
+            reasons=reasons,
+            raw={
+                "selectedCode": selected.code,
+                "candidateCodes": codes,
+                "quote": selected.to_dict(),
+            },
+            quote_time=datetime.now().isoformat(timespec="seconds"),
+        )
 
     def _tdx_quote_signal(self, signal_id: str, config: dict[str, Any]) -> MarketSignal:
         if self.quote_provider is None:
@@ -67,9 +138,7 @@ class MarketSignalProvider:
                 confidence="none",
                 reasons=[f"通达信行情信号拉取失败: {exc}"],
             )
-        return_pct = quote.change_pct
-        if return_pct is None and quote.market_price is not None and quote.prev_close:
-            return_pct = (quote.market_price / quote.prev_close - 1) * 100
+        return_pct = self._quote_return_pct(quote)
 
         reasons = []
         confidence = config.get("confidence", "medium")
@@ -157,3 +226,7 @@ class MarketSignalProvider:
             return float(value)
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _quote_return_pct(quote: Any) -> float | None:
+        return quote.change_pct

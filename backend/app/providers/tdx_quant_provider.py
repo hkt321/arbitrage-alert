@@ -36,10 +36,13 @@ class TdxQuantProvider:
         return [self.get_quote(code) for code in codes]
 
     def _to_quote_snapshot(self, code: str, raw: dict[str, Any]) -> QuoteSnapshot:
+        market_price = self._num(raw.get("Now"))
+        prev_close = self._num(raw.get("LastClose"))
+
         return QuoteSnapshot(
             code=code,
-            market_price=self._num(raw.get("Now")),
-            prev_close=self._num(raw.get("LastClose")),
+            market_price=market_price,
+            prev_close=prev_close,
             open_price=self._num(raw.get("Open")),
             high_price=self._num(raw.get("Max")),
             low_price=self._num(raw.get("Min")),
@@ -51,7 +54,7 @@ class TdxQuantProvider:
             ask_volume1=self._list_num(raw.get("Sellv"), 0),
             reference_nav=self._zero_as_none(raw.get("Jjjz")),
             average_price=self._num(raw.get("Average")),
-            change_pct=self._num(raw.get("ZAFPre3")),
+            change_pct=self._change_pct(market_price, prev_close, raw.get("ZAFPre3")),
             raw=raw,
         )
 
@@ -83,3 +86,9 @@ class TdxQuantProvider:
         if amount_wan is None:
             return None
         return amount_wan * 10000
+
+    @classmethod
+    def _change_pct(cls, market_price: float | None, prev_close: float | None, fallback: Any) -> float | None:
+        if market_price is not None and prev_close:
+            return (market_price / prev_close - 1) * 100
+        return cls._num(fallback)

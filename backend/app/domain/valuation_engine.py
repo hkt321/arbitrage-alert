@@ -15,6 +15,8 @@ class ValuationEngine:
             return self._value_iopv(profile, quote, signals)
         if profile.valuation_model == "index_proxy":
             return self._value_index_proxy(profile, quote, signals)
+        if profile.valuation_model == "commodity_proxy":
+            return self._value_commodity_proxy(profile, quote, signals)
         if profile.valuation_model == "qdii_proxy":
             return self._value_qdii_proxy(profile, quote, signals)
         return self._unsupported(profile, quote, signals)
@@ -47,6 +49,23 @@ class ValuationEngine:
             estimated_nav = profile.last_official_nav * (1 + index_return / 100)
             reasons.append("使用指数代理估值")
         return self._build_snapshot(profile, quote, estimated_nav, "index_proxy", reasons, signals)
+
+    def _value_commodity_proxy(
+        self,
+        profile: FundProfile,
+        quote: QuoteSnapshot,
+        signals: ValuationSignalSet | None,
+    ) -> ValuationSnapshot:
+        reasons = []
+        if profile.last_official_nav is None:
+            reasons.append("缺少最新官方净值")
+            estimated_nav = None
+        else:
+            benchmark_return = signals.benchmark_return_pct if signals is not None else profile.proxy_return_pct
+            proxy_return = benchmark_return * profile.beta
+            estimated_nav = profile.last_official_nav * (1 + proxy_return / 100)
+            reasons.append("使用商品期货代理估值")
+        return self._build_snapshot(profile, quote, estimated_nav, "commodity_proxy", reasons, signals)
 
     def _value_qdii_proxy(
         self,
@@ -136,7 +155,7 @@ class ValuationEngine:
             return "none"
 
         confidence = profile.confidence_floor
-        if signals is not None and model in ("index_proxy", "qdii_proxy"):
+        if signals is not None and model in ("index_proxy", "commodity_proxy", "qdii_proxy"):
             signal_confidences = [
                 signal.confidence
                 for signal in (signals.benchmark, signals.fx)

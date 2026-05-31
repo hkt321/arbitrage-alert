@@ -31,6 +31,7 @@
 - `tq.initialize(__file__)` 可以从项目目录直接初始化成功。
 - 不需要把脚本放进 `D:\TongDaXing\PYPlugins\user` 也能连接。
 - `get_market_snapshot` 可以获取 A 股、ETF、LOF、可转债快照。
+- `get_market_snapshot` 可以获取已知代码的国内期货快照，例如沪银 `AG2608.SHF`、原油 `SC2607.INE`。
 - `get_market_data` 可以获取 ETF、LOF 的日线 K 线。
 - 普通 L1 行情下，`Buyp` / `Sellp` 返回数组，但第 2 到第 5 档多数为 0；第一版只能稳定使用买一卖一，完整五档需要后续确认 Level-2。
 
@@ -64,12 +65,14 @@
 | `Sellv[0]` | `askVolume1` | 卖一量 |
 | `Jjjz` | `referenceNav` / `iopv` | ETF 有值，LOF 样例为 0，不能直接当通用估值 |
 | `Average` | `averagePrice` | 均价 |
-| `ZAFPre3` | `changePct` | 涨跌幅字段候选，需继续校验 |
+| `ZAFPre3` | `changePct` | 涨跌幅字段候选，口径不稳定，项目内优先用 `Now / LastClose - 1` 重算 |
 
 当前限制：
 
 - `get_stock_list` 默认可以取 A 股列表，但 `list_type=31/32/33/34/35/36/91` 在当前环境返回 0 或 `server return none`。
+- `list_type=92/101` 以及按期货前缀 `get_stock_list_in_sector(..., block_type=2)` 在当前环境返回 0。
 - 因此第一版不能依赖通达信自动给 ETF/LOF/可转债品种池；需要自己维护重点基金清单，或从交易所/公开源补全。
+- 期货代理信号也先维护候选合约列表，并在程序里自动选择成交量最大的可用合约。
 - 当前没有确认 Level-2 权限，先按买一卖一设计滑点模型。
 - `Jjjz` 对 ETF 有用，但对 LOF/QDII-LOF 不可用，需要估值引擎自己算。
 

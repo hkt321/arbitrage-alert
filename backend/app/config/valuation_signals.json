@@ -11,27 +11,29 @@
     },
     {
       "id": "SPSIOP_PROXY",
-      "name": "标普油气代理",
+      "name": "国内原油期货代理",
       "kind": "benchmark",
-      "source": "manual",
-      "returnPct": 0,
-      "currency": "USD",
-      "confidence": "low",
-      "reasons": [
-        "海外油气实时代理源未接入，暂用 0% 占位"
-      ]
+      "source": "tdx_candidate_quote",
+      "candidateCodes": [
+        "SC2606.INE",
+        "SC2607.INE",
+        "SC2609.INE"
+      ],
+      "currency": "CNY",
+      "confidence": "low"
     },
     {
       "id": "SILVER_PROXY",
-      "name": "白银代理",
+      "name": "沪银期货代理",
       "kind": "benchmark",
-      "source": "manual",
-      "returnPct": 0,
-      "currency": "USD",
-      "confidence": "low",
-      "reasons": [
-        "白银实时代理源未接入，暂用 0% 占位"
-      ]
+      "source": "tdx_candidate_quote",
+      "candidateCodes": [
+        "AG2606.SHF",
+        "AG2608.SHF",
+        "AG2612.SHF"
+      ],
+      "currency": "CNY",
+      "confidence": "medium"
     },
     {
       "id": "USDCNY",
