@@ -144,7 +144,50 @@ class DomainTest(unittest.TestCase):
         score = OpportunityScorer(min_edge_pct=2).score(profile, quote, valuation)
 
         self.assertEqual(score.level, "executable")
-        self.assertNotIn("申购限额未知", score.reasons)
+        self.assertNotIn("申购限额未接入", score.reasons)
+
+    def test_qdii_etf_without_purchase_limit_can_remain_executable(self):
+        profile = FundProfile.from_dict(
+            {
+                "code": "159941.SZ",
+                "name": "测试QDIIETF",
+                "assetType": "QDII-ETF",
+                "valuationModel": "iopv",
+                "trackingIndexCode": "NDX",
+                "subscriptionStatus": "open",
+                "redemptionStatus": "open",
+                "purchaseLimitYuan": None,
+                "feePct": 0.05,
+                "slippageBufferPct": 0.08,
+                "errorBufferPct": 0.8,
+                "confidenceFloor": "medium",
+            }
+        )
+        quote = QuoteSnapshot(
+            code="159941.SZ",
+            market_price=1.7,
+            prev_close=1.6,
+            open_price=1.6,
+            high_price=1.7,
+            low_price=1.6,
+            volume=10_000_000,
+            turnover_yuan=100_000_000,
+            bid_price1=1.69,
+            bid_volume1=100_000,
+            ask_price1=1.7,
+            ask_volume1=100_000,
+            reference_nav=1.5,
+            average_price=1.65,
+            change_pct=5,
+            raw={},
+        )
+
+        valuation = ValuationEngine().value(profile, quote)
+        score = OpportunityScorer(min_edge_pct=2).score(profile, quote, valuation)
+
+        self.assertEqual(score.level, "executable")
+        self.assertNotIn("申购限额未接入", score.reasons)
+        self.assertIsNone(score.execution["purchaseLimitYuan"])
 
     def test_pcf_switch_parser_blocks_creation_only(self):
         creation, redemption = TdxPcfProvider._parse_switch("禁止申购允许赎回")

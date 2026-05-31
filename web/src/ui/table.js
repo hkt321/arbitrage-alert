@@ -30,7 +30,10 @@
       return renderReasonList(fund.reasons);
     }
 
-    return `<ul class="reason-list execution-list"><li>限额 ${formatTurnoverYuan(fund.purchaseLimitYuan)}</li></ul>`;
+    const limit = fund.purchaseLimitYuan === null || fund.purchaseLimitYuan === undefined
+      ? "未接入"
+      : formatTurnoverYuan(fund.purchaseLimitYuan);
+    return `<ul class="reason-list execution-list"><li>限额 ${limit}</li></ul>`;
   }
 
   function renderFundRows(funds) {

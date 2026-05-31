@@ -44,7 +44,7 @@ class OpportunityScorer:
 
         if self._requires_cash_subscription_limit(profile):
             if profile.purchase_limit_yuan is None:
-                reasons.append("申购限额未知")
+                reasons.append("申购限额未接入")
             elif profile.purchase_limit_yuan < self.desired_trade_yuan:
                 reasons.append("申购限额低于计划交易额")
 
@@ -54,7 +54,7 @@ class OpportunityScorer:
         blocking = [
             "成交额不足",
             "买一卖一深度不足",
-            "申购限额未知",
+            "申购限额未接入",
             "申购限额低于计划交易额",
             "估值置信度: none",
             "估值置信度: low",
