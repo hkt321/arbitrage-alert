@@ -55,7 +55,8 @@
 - [ ] 实现行情采集器。
 - [x] 实现 FastAPI 后端。
 - [x] 抽取 `OpportunityService`，让 CLI/API/后续任务复用同一评分链路。
-- [ ] 前端改为请求 API。
+- [x] 前端改为请求 API。
+- [x] FastAPI 托管前端页面，打开根路径即可查看真实机会看板。
 - [ ] 添加缓存和错误提示。
 
 ## 提醒 Sprint

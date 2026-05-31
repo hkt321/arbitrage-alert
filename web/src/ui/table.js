@@ -1,49 +1,72 @@
 (function (app) {
-  const { formatSigned, formatTurnover, formatYuan, pctClass } = app.formatters;
-  const { getExecution } = app.executionRules;
+  const {
+    confidenceLabel,
+    formatDepth,
+    formatNumber,
+    formatPct,
+    formatTurnoverYuan,
+    pctClass
+  } = app.formatters;
 
-  function renderFundRows(funds, state) {
+  function rowClass(fund) {
+    if (fund.level === "executable") return "executable";
+    if (fund.level === "watch") return "watching";
+    return "";
+  }
+
+  function badgeClass(fund) {
+    if (fund.level === "executable") return "normal";
+    if (fund.level === "watch") return "risk";
+    return "quiet";
+  }
+
+  function renderReasonList(reasons) {
+    if (!reasons || reasons.length === 0) return "暂无阻断";
+    return reasons.slice(0, 3).join("、");
+  }
+
+  function renderFundRows(funds) {
+    if (funds.length === 0) {
+      return `<tr><td colspan="8" class="empty-state">没有匹配的品种</td></tr>`;
+    }
+
     return funds
       .map((fund) => {
-        const execution = getExecution(fund, state);
-        const rowClass = execution.label === "可执行" ? "executable" : execution.label === "观察" ? "watching" : "";
-
         return `
-          <tr class="${rowClass}">
+          <tr class="${rowClass(fund)}">
             <td>
               <button class="watch ${fund.watch ? "on" : ""}" data-code="${fund.code}" title="切换自选">${fund.watch ? "★" : "☆"}</button>
               <span class="fund-name">${fund.name}</span>
               <span class="fund-code">${fund.code}</span>
             </td>
             <td>
-              <span>${fund.nav.toFixed(4)}</span>
-              <span class="${pctClass(fund.navChangePct)}">${formatSigned(fund.navChangePct)}</span>
-              <small>${fund.navLagDays === 0 ? "当日估值" : `滞后 T-${fund.navLagDays}`}</small>
+              <span>${formatNumber(fund.estimatedNav, 4)}</span>
+              <small>${fund.model || "--"}</small>
             </td>
             <td class="premium-cell">
-              <strong class="premium ${pctClass(fund.premiumPct)}">${fund.premiumPct.toFixed(2)}%</strong>
-              <span>净 ${fund.netPremiumPct.toFixed(2)}%</span>
+              <strong class="premium ${pctClass(fund.grossPremiumPct)}">${formatPct(fund.grossPremiumPct)}</strong>
+              <span>净 ${formatPct(fund.tradableEdgePct)}</span>
             </td>
             <td>
-              <span>${fund.marketPrice.toFixed(3)}</span>
-              <span class="${pctClass(fund.priceChangePct)}">${formatSigned(fund.priceChangePct)}</span>
-              <small>价差 ${fund.spreadPct.toFixed(2)}%</small>
+              <span>${formatNumber(fund.marketPrice, 3)}</span>
+              <span class="${pctClass(fund.priceChangePct)}">${formatPct(fund.priceChangePct)}</span>
+              <small>买一 ${formatNumber(fund.bidPrice1, 3)} / 卖一 ${formatNumber(fund.askPrice1, 3)}</small>
             </td>
             <td>
-              <span>${formatTurnover(fund.turnover)}</span>
-              <small>盘口 ${formatTurnover(fund.depthYuan)}</small>
+              <span>${formatTurnoverYuan(fund.turnoverYuan)}</span>
+              <small>卖一深度 ${formatDepth(fund)}</small>
             </td>
             <td>
-              <span>${formatYuan(fund.purchaseLimitYuan)}</span>
-              <small>${fund.subscriptionStatus} / 赎回${fund.redemptionStatus}</small>
+              <span class="${pctClass(fund.tradableEdgePct)}">${formatPct(fund.tradableEdgePct)}</span>
+              <small>成本 ${formatPct(fund.estimatedCostPct)} / 误差 ${formatPct(fund.errorBufferPct)}</small>
             </td>
             <td>
-              <span>${fund.feePct.toFixed(2)}%</span>
-              <small>${fund.settlementCycle}</small>
+              <span>${confidenceLabel(fund.confidence)}</span>
+              <small>${fund.inputs?.benchmarkSignalId || "无信号"}</small>
             </td>
             <td>
-              <span class="badge ${execution.label === "可执行" ? "normal" : execution.label === "观察" ? "risk" : "quiet"}">${execution.label}</span>
-              <small>${execution.reasons.slice(0, 2).join("、")}</small>
+              <span class="badge ${badgeClass(fund)}">${fund.levelLabel}</span>
+              <small>${renderReasonList(fund.reasons)}</small>
             </td>
           </tr>
         `;
@@ -51,16 +74,16 @@
       .join("");
   }
 
-  function getExecutionSummary(funds, state) {
-    const executions = funds.map((fund) => getExecution(fund, state));
+  function getExecutionSummary(funds) {
     return {
-      executableCount: executions.filter((item) => item.label === "可执行").length,
-      watchCount: executions.filter((item) => item.label === "观察").length
+      executableCount: funds.filter((item) => item.level === "executable").length,
+      watchCount: funds.filter((item) => item.level === "watch").length,
+      unavailableCount: funds.filter((item) => item.level === "unavailable").length
     };
   }
 
   app.tableView = {
-    renderFundRows,
-    getExecutionSummary
+    getExecutionSummary,
+    renderFundRows
   };
 })(window.ArbitrageAlert = window.ArbitrageAlert || {});

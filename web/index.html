@@ -13,36 +13,33 @@
           <h1>套利机会提醒神器</h1>
           <p id="updatedAt">等待刷新</p>
         </div>
-        <section class="threshold-panel" aria-label="提醒阈值">
+        <section class="threshold-panel" aria-label="刷新控制">
+          <button id="refreshButton" class="primary-action" type="button">刷新</button>
           <label>
-            溢价阈值
-            <input id="premiumThreshold" type="number" value="3" step="0.5" />
+            自动刷新
+            <input id="autoRefresh" type="checkbox" />
           </label>
           <label>
-            成交额下限
-            <input id="turnoverThreshold" type="number" value="0.5" step="0.1" />
-            <span>亿</span>
-          </label>
-          <label>
-            计划申购额
-            <input id="desiredPurchase" type="number" value="1" step="0.5" />
-            <span>万</span>
+            间隔
+            <input id="refreshInterval" type="number" value="60" min="15" step="15" />
+            <span>秒</span>
           </label>
         </section>
       </header>
 
-      <nav class="tabs" aria-label="基金分类">
+      <nav class="tabs" aria-label="机会分类">
         <button class="active" data-category="全部">全部</button>
-        <button data-category="股债型LOF">股债型 LOF</button>
-        <button data-category="指数型LOF">指数型 LOF</button>
-        <button data-category="QDII-ETF">QDII-ETF</button>
+        <button data-category="可执行">可执行</button>
+        <button data-category="观察">观察</button>
+        <button data-category="普通">普通</button>
+        <button data-category="不可用">不可用</button>
         <button data-category="自选">自选</button>
       </nav>
 
       <section class="toolbar">
         <label class="search-box">
           <span>搜索</span>
-          <input id="searchInput" type="search" placeholder="基金名称或代码" />
+          <input id="searchInput" type="search" placeholder="名称或代码" />
         </label>
         <div class="summary" id="summary"></div>
       </section>
@@ -52,13 +49,13 @@
           <thead>
             <tr>
               <th data-sort="name">基金名称</th>
-              <th data-sort="nav">估值/净值</th>
-              <th data-sort="premiumPct" class="sorted">溢价率</th>
+              <th data-sort="estimatedNav">估值/净值</th>
+              <th data-sort="grossPremiumPct" class="sorted">溢价率</th>
               <th data-sort="marketPrice">场内价格</th>
-              <th data-sort="turnover">成交额</th>
-              <th data-sort="purchaseLimitYuan">申购限额</th>
-              <th data-sort="feePct">成本/周期</th>
-              <th data-sort="executionRank">执行结论</th>
+              <th data-sort="turnoverYuan">成交额</th>
+              <th data-sort="tradableEdgePct">可交易边际</th>
+              <th data-sort="confidence">置信度</th>
+              <th data-sort="levelRank">执行结论</th>
             </tr>
           </thead>
           <tbody id="fundTable"></tbody>
@@ -67,8 +64,8 @@
     </main>
 
     <script src="./src/data/mockFunds.js"></script>
+    <script src="./src/data/apiClient.js"></script>
     <script src="./src/domain/formatters.js"></script>
-    <script src="./src/domain/execution.js"></script>
     <script src="./src/ui/table.js"></script>
     <script src="./src/app.js"></script>
   </body>

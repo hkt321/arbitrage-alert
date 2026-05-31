@@ -86,6 +86,12 @@ Run local API:
 .\.venv\Scripts\python -m uvicorn app.api.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
+Open dashboard:
+
+```text
+http://127.0.0.1:8000/
+```
+
 Endpoints:
 
 ```text

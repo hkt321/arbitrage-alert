@@ -5,10 +5,11 @@
 ## 当前前端模块
 
 ```text
-web/src/
+  web/src/
   app.js                  # 页面状态、事件绑定、模块编排
   data/
-    mockFunds.js          # 模拟行情数据，后续替换为 API 数据适配器
+    apiClient.js          # 真实 API 数据适配器
+    mockFunds.js          # API 不可用时的本地兜底样例
   domain/
     execution.js          # 可执行套利判断规则
     formatters.js         # 金额、百分比、状态格式化
