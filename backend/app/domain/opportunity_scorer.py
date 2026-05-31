@@ -104,34 +104,7 @@ class OpportunityScorer:
         profile: FundProfile,
         quote: QuoteSnapshot,
         level: str,
-    ) -> dict[str, float | str | list[str] | None]:
-        basis = []
-        suggested_subscription_yuan = None
-
-        if level == "executable":
-            suggested_subscription_yuan = self.desired_trade_yuan
-            basis.append(f"计划交易额 {self.desired_trade_yuan:.0f} 元")
-
-            if self._requires_cash_subscription_limit(profile):
-                if profile.purchase_limit_yuan is not None:
-                    suggested_subscription_yuan = min(
-                        suggested_subscription_yuan,
-                        profile.purchase_limit_yuan,
-                    )
-                    basis.append(f"单日申购限额 {profile.purchase_limit_yuan:.0f} 元")
-                else:
-                    suggested_subscription_yuan = None
-                    basis.append("现金申购限额未知")
-            else:
-                basis.append("ETF 最小申购单位暂未接入，金额仅作看板参考")
-
-            if suggested_subscription_yuan is not None and quote.ask_price1 and quote.ask_volume1:
-                ask_depth_yuan = quote.ask_price1 * quote.ask_volume1 * 100
-                basis.append(f"卖一深度约 {ask_depth_yuan:.0f} 元")
-
+    ) -> dict[str, float | None]:
         return {
-            "suggestedSubscriptionYuan": suggested_subscription_yuan,
-            "desiredTradeYuan": self.desired_trade_yuan,
             "purchaseLimitYuan": profile.purchase_limit_yuan,
-            "basis": basis,
         }

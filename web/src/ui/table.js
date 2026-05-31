@@ -30,9 +30,7 @@
       return renderReasonList(fund.reasons);
     }
 
-    const amount = formatTurnoverYuan(fund.suggestedSubscriptionYuan);
-    const items = [`建议申购 ${amount}`, ...fund.executionBasis.slice(0, 2)];
-    return `<ul class="reason-list execution-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+    return `<ul class="reason-list execution-list"><li>限额 ${formatTurnoverYuan(fund.purchaseLimitYuan)}</li></ul>`;
   }
 
   function renderFundRows(funds) {
