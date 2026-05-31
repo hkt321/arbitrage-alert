@@ -1,0 +1,49 @@
+{
+  "signals": [
+    {
+      "id": "HS300_TDX",
+      "name": "沪深300指数",
+      "kind": "benchmark",
+      "source": "tdx_quote",
+      "code": "000300.SH",
+      "currency": "CNY",
+      "confidence": "medium"
+    },
+    {
+      "id": "SPSIOP_PROXY",
+      "name": "标普油气代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "USD",
+      "confidence": "low",
+      "reasons": [
+        "海外油气实时代理源未接入，暂用 0% 占位"
+      ]
+    },
+    {
+      "id": "SILVER_PROXY",
+      "name": "白银代理",
+      "kind": "benchmark",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "USD",
+      "confidence": "low",
+      "reasons": [
+        "白银实时代理源未接入，暂用 0% 占位"
+      ]
+    },
+    {
+      "id": "USDCNY",
+      "name": "美元兑人民币",
+      "kind": "fx",
+      "source": "manual",
+      "returnPct": 0,
+      "currency": "CNY",
+      "confidence": "low",
+      "reasons": [
+        "实时汇率源未接入，暂用 0% 占位"
+      ]
+    }
+  ]
+}
