@@ -9,6 +9,7 @@ class OpportunityScore:
     level: str
     score: float
     reasons: list[str]
+    execution: dict[str, Any]
     quote: dict[str, Any]
     valuation: dict[str, Any]
 

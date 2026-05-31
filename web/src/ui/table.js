@@ -25,6 +25,16 @@
     return `<ul class="reason-list">${items.map((reason) => `<li>${reason}</li>`).join("")}</ul>`;
   }
 
+  function renderExecutionList(fund) {
+    if (fund.level !== "executable") {
+      return renderReasonList(fund.reasons);
+    }
+
+    const amount = formatTurnoverYuan(fund.suggestedSubscriptionYuan);
+    const items = [`建议申购 ${amount}`, ...fund.executionBasis.slice(0, 2)];
+    return `<ul class="reason-list execution-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+  }
+
   function renderFundRows(funds) {
     if (funds.length === 0) {
       return `<tr><td colspan="8" class="empty-state">没有匹配的品种</td></tr>`;
@@ -70,7 +80,7 @@
             </td>
             <td>
               <span class="badge ${badgeClass(fund)}">${fund.levelLabel}</span>
-              ${renderReasonList(fund.reasons)}
+              ${renderExecutionList(fund)}
             </td>
           </tr>
         `;

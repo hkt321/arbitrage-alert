@@ -332,6 +332,11 @@ td small {
   min-width: 0;
 }
 
+.execution-list li:first-child {
+  color: #0f7a39;
+  font-weight: 700;
+}
+
 .premium-cell span {
   display: block;
   margin: 4px 0 0;

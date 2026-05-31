@@ -59,6 +59,7 @@ class DomainTest(unittest.TestCase):
 
         self.assertEqual(score.level, "executable")
         self.assertGreater(score.score, 2)
+        self.assertEqual(score.execution["suggestedSubscriptionYuan"], 10_000)
 
     def test_low_purchase_limit_blocks_execution(self):
         profile = FundProfile.from_dict(

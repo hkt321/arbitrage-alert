@@ -22,6 +22,7 @@
   function mapOpportunity(item) {
     const quote = item.quote || {};
     const valuation = item.valuation || {};
+    const execution = item.execution || {};
 
     return {
       code: item.code,
@@ -31,6 +32,8 @@
       levelRank: levelRank(item.level),
       score: item.score || 0,
       reasons: item.reasons || [],
+      suggestedSubscriptionYuan: execution.suggestedSubscriptionYuan,
+      executionBasis: execution.basis || [],
       marketPrice: quote.market_price,
       priceChangePct: quote.change_pct,
       turnoverYuan: quote.turnover_yuan,
