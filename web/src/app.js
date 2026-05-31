@@ -1,13 +1,14 @@
 (function (app) {
   const { fetchOpportunities } = app.apiClient;
   const { getExecutionSummary, renderFundRows } = app.tableView;
+  const notifier = app.notifier;
 
   const state = {
     autoRefresh: false,
     category: "全部",
     funds: [],
-    lastSource: "api",
     lastMeta: {},
+    lastSource: "api",
     refreshIntervalSeconds: 60,
     search: "",
     sortDir: "desc",
@@ -23,6 +24,9 @@
   const refreshButton = document.querySelector("#refreshButton");
   const autoRefresh = document.querySelector("#autoRefresh");
   const refreshInterval = document.querySelector("#refreshInterval");
+  const notificationButton = document.querySelector("#notificationButton");
+  const notificationLevel = document.querySelector("#notificationLevel");
+  const notificationCooldown = document.querySelector("#notificationCooldown");
 
   app.watchStore = {
     key: "arbitrage-alert-watchlist",
@@ -85,6 +89,33 @@
     });
   }
 
+  function renderNotificationControls() {
+    const settings = notifier.getSettings();
+    notificationLevel.value = settings.minLevel;
+    notificationCooldown.value = settings.cooldownMinutes;
+
+    if (!notifier.canNotify()) {
+      notificationButton.textContent = "通知不可用";
+      notificationButton.disabled = true;
+      return;
+    }
+
+    if (Notification.permission === "granted" && settings.enabled) {
+      notificationButton.textContent = "通知已启用";
+      notificationButton.classList.add("active");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      notificationButton.textContent = "通知被拒绝";
+      notificationButton.disabled = true;
+      return;
+    }
+
+    notificationButton.textContent = "启用通知";
+    notificationButton.classList.remove("active");
+  }
+
   function render() {
     const visibleFunds = getVisibleFunds();
     const counts = getExecutionSummary(visibleFunds);
@@ -92,10 +123,28 @@
     table.innerHTML = renderFundRows(visibleFunds);
     summary.textContent = `${visibleFunds.length} 个品种，${counts.executableCount} 个可执行，${counts.watchCount} 个观察，${counts.unavailableCount} 个不可用`;
     renderSortState();
+    renderNotificationControls();
   }
 
   function setStatus(message) {
     updatedAt.textContent = message;
+  }
+
+  function updateNotificationSettings() {
+    notifier.saveSettings({
+      minLevel: notificationLevel.value,
+      cooldownMinutes: Number(notificationCooldown.value || 10)
+    });
+  }
+
+  function processNotifications() {
+    const count = notifier.process(state.funds, {
+      cached: Boolean(state.lastMeta.cached)
+    });
+    if (count > 0) {
+      const current = updatedAt.textContent;
+      setStatus(`${current}，已发送 ${count} 条通知`);
+    }
   }
 
   async function loadData(options = {}) {
@@ -107,8 +156,11 @@
       state.lastMeta = payload.meta || {};
       state.lastSource = "api";
       const cacheText = state.lastMeta.cached ? "缓存" : "实时";
-      const asOf = state.lastMeta.asOf ? new Date(state.lastMeta.asOf).toLocaleString("zh-CN", { hour12: false }) : new Date().toLocaleString("zh-CN", { hour12: false });
+      const asOf = state.lastMeta.asOf
+        ? new Date(state.lastMeta.asOf).toLocaleString("zh-CN", { hour12: false })
+        : new Date().toLocaleString("zh-CN", { hour12: false });
       setStatus(`更新时间：${asOf}（${cacheText}）`);
+      processNotifications();
     } catch (error) {
       state.funds = app.mockFunds || [];
       state.lastSource = "mock";
@@ -174,5 +226,16 @@
     scheduleRefresh();
   });
 
+  notificationButton.addEventListener("click", async () => {
+    updateNotificationSettings();
+    const permission = await notifier.requestPermission();
+    notifier.saveSettings({ enabled: permission === "granted" });
+    renderNotificationControls();
+  });
+
+  notificationLevel.addEventListener("change", updateNotificationSettings);
+  notificationCooldown.addEventListener("input", updateNotificationSettings);
+
+  renderNotificationControls();
   loadData();
 })(window.ArbitrageAlert = window.ArbitrageAlert || {});

@@ -27,7 +27,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -88,6 +89,15 @@ input {
   color: var(--ink);
 }
 
+select {
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--ink);
+}
+
 input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -107,6 +117,22 @@ input[type="checkbox"] {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.secondary-action {
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 14px;
+  background: #fff;
+  color: var(--brand-strong);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-action.active {
+  border-color: var(--brand);
+  background: var(--soft-blue);
 }
 
 .tabs {

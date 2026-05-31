@@ -92,6 +92,8 @@ Open dashboard:
 http://127.0.0.1:8000/
 ```
 
+The dashboard supports browser notifications with a configurable minimum level and cooldown.
+
 Endpoints:
 
 ```text
