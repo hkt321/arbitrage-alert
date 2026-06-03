@@ -9,3 +9,13 @@ __pycache__/
 tmp_*
 .DS_Store
 Thumbs.db
+
+# Debug / probe files
+tools/debug_*
+tools/probe_*
+tools/test_*
+tools/*.html
+tools/*.json
+tools/pro
+tools/de
+tools/format_output.py
