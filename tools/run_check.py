@@ -130,17 +130,20 @@ def pad_visual(text: str, width: int) -> str:
 # ------------------------------------------------------------------
 
 def push_to_wechat(sendkey, title, content):
-    """通过 Server酱 推送消息到微信"""
+    """通过 Server酱 推送消息到微信（失败不影响主流程）"""
     import urllib.request
-    data = urllib.parse.urlencode({"title": title, "desp": content}).encode("utf-8")
-    url = f"https://sctapi.ftqq.com/{sendkey}.send"
-    req = urllib.request.Request(url, data=data, method="POST")
-    resp = urllib.request.urlopen(req, timeout=15)
-    result = json.loads(resp.read().decode("utf-8"))
-    if result.get("code") == 0:
-        print(f"  ✅ 微信推送成功: {result.get('data', {}).get('pushid', '')}")
-    else:
-        print(f"  ⚠️ 微信推送失败: {result.get('message', '未知错误')}")
+    try:
+        data = urllib.parse.urlencode({"title": title, "desp": content}).encode("utf-8")
+        url = f"https://sctapi.ftqq.com/{sendkey}.send"
+        req = urllib.request.Request(url, data=data, method="POST")
+        resp = urllib.request.urlopen(req, timeout=15)
+        result = json.loads(resp.read().decode("utf-8"))
+        if result.get("code") == 0:
+            print(f"  ✅ 微信推送成功: {result.get('data', {}).get('pushid', '')}")
+        else:
+            print(f"  ⚠️ 微信推送失败: {result.get('message', '未知错误')}")
+    except Exception as e:
+        print(f"  ⚠️ 微信推送异常: {e}")
 
 
 def build_push_content(results):
