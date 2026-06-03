@@ -1,0 +1,32 @@
+name: 每日套利机会检查
+
+on:
+  # 每天北京时间 14:00 (UTC 06:00) 自动运行
+  schedule:
+    - cron: '0 6 * * 1-5'
+  # 也支持手动触发
+  workflow_dispatch:
+    inputs:
+      top:
+        description: '检查前N只基金'
+        default: '30'
+        required: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 运行套利检查并推送微信
+        env:
+          SCT_SENDKEY: ${{ secrets.SCT_SENDKEY }}
+          TOP_N: ${{ github.event.inputs.top || '30' }}
+        run: |
+          python -X utf8 tools/run_check.py --top "$TOP_N" --push-key "$SCT_SENDKEY"

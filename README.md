@@ -50,18 +50,27 @@ python -X utf8 tools\run_check.py --json
 | watch | 🟡 | **观察中**（溢价/折价高但申赎暂停或限额过低） |
 | normal | ⚪ | **正常**（溢价/折价未达阈值） |
 
-## 定时推送（Windows 任务计划程序）
+## GitHub Actions 自动推送（推荐）
 
-每天 14:00 自动运行并推送微信：
+无需开电脑，每天 14:00（北京时间）自动在 GitHub 云服务器运行并推送到微信。
 
-1. 按下 `Win + R`，输入 `taskschd.msc` 回车
-2. 右侧点击 **创建任务**
-3. **常规** 标签：名称填 "套利机会检查"
-4. **触发器** 标签 → 新建 → 每天 14:00 开始
-5. **操作** 标签 → 新建：
-   - 程序或脚本：`python`
-   - 添加参数：`-X utf8 D:\Code\arbitrage-alert\tools\run_check.py --push-key SCT358832TbljKzAG4ZHQyEqyXzqQgxTDa`
-6. 确定保存即可
+### 配置方式
+
+1. 打开你的 GitHub 仓库 → **Settings** → **Secrets and variables** → **Actions**
+2. 点击 **New repository secret**
+   - Name: `SCT_SENDKEY`
+   - Value: 你的 Server酱 SendKey
+   - 点击 **Add secret**
+3. 以后每天工作日 14:00 自动运行，你也可以去 **Actions** 标签页手动触发
+
+> ⚠️ 首次 push 后需要完成上述 secrets 配置，否则推送会因缺少 SendKey 失败。
+
+## 本地运行（Windows）
+
+```powershell
+cd D:\Code\arbitrage-alert
+python -X utf8 tools\run_check.py --top 20
+```
 
 ## 目录结构
 
