@@ -5,9 +5,11 @@
 使用方式：
     python tools/run_check.py
     python tools/run_check.py --top 20
-    python tools/run_check.py --min-limit 100
-    python tools/run_check.py --min-premium 2.0
-    python tools/run_check.py --json        # JSON 格式输出
+    python tools/run_check.py --min-limit 20
+    python tools/run_check.py --min-premium 1.5
+    python tools/run_check.py --min-discount -2.0
+    python tools/run_check.py --json                      # JSON 格式输出
+    python tools/run_check.py --push-key <SENDKEY>        # 推送结果到微信
 
 数据来源：
     - 溢价/净值/份额/盘口：palmmicro.com
@@ -17,6 +19,7 @@ import argparse
 import json
 import sys
 import os
+import urllib.parse
 from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
@@ -24,6 +27,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 from app.providers.palmmicro_lof_provider import PalmmicroLofProvider
 from app.providers.eastmoney_fund_status_provider import EastmoneyFundStatusProvider
 
+
+# ------------------------------------------------------------------
+# 格式化函数
+# ------------------------------------------------------------------
 
 def fmt_pct(val, digits=2):
     if val is None:
@@ -53,14 +60,21 @@ def fmt_wan_delta(val):
     return f"{sign}{val:.2f}万"
 
 
+# ------------------------------------------------------------------
+# 套利级别判定
+# ------------------------------------------------------------------
+
 def determine_level(premium_pct, purchase_limit, subscription_status,
-                    redemption_status, min_limit, min_premium):
+                    redemption_status, min_limit, min_premium, min_discount):
+    """返回 (level, reasons)"""
     reasons = []
     if premium_pct is None:
         return "unknown", ["无估值数据"]
-    if abs(premium_pct) < min_premium:
-        return "normal", [f"溢价{fmt_pct(premium_pct)}，未达{min_premium}%阈值"]
+
+    # 溢价套利（premium > 0）
     if premium_pct > 0:
+        if premium_pct < min_premium:
+            return "normal", [f"溢价{fmt_pct(premium_pct)}，未达{min_premium}%阈值"]
         if subscription_status == "closed":
             return "watch", [f"申购暂停", f"溢价{fmt_pct(premium_pct)}"]
         if purchase_limit is not None and purchase_limit < min_limit:
@@ -70,8 +84,11 @@ def determine_level(premium_pct, purchase_limit, subscription_status,
             return "watch", ["限额未接入", f"溢价{fmt_pct(premium_pct)}"]
         return "executable", [f"溢价{fmt_pct(premium_pct)}",
                               f"限额{fmt_yuan(purchase_limit)}"]
-    # 折价套利：场内买入 -> 场外赎回
+
+    # 折价套利（premium < 0）：场内买入 -> 场外赎回
     if premium_pct < 0:
+        if premium_pct > min_discount:  # min_discount 为负值，如 -2.0
+            return "normal", [f"折价{fmt_pct(premium_pct)}，未达{abs(min_discount)}%阈值"]
         if redemption_status == "closed":
             return "watch", [f"赎回暂停", f"折价{fmt_pct(premium_pct)}"]
         if purchase_limit is not None and purchase_limit < min_limit:
@@ -81,6 +98,7 @@ def determine_level(premium_pct, purchase_limit, subscription_status,
             return "watch", ["限额未接入", f"折价{fmt_pct(premium_pct)}"]
         return "executable", [f"折价{fmt_pct(premium_pct)}",
                               f"限额{fmt_yuan(purchase_limit)}"]
+
     return "normal", []
 
 
@@ -89,8 +107,11 @@ def get_premium(snapshot):
     return p if p is not None else snapshot.est_premium_pct
 
 
+# ------------------------------------------------------------------
+# 视觉宽度（CJK 字符算 2 个宽度）
+# ------------------------------------------------------------------
+
 def visual_len(text: str) -> int:
-    """Calculate visual width accounting for CJK characters (each = 2)."""
     count = 0
     for ch in text:
         if '\u4e00' <= ch <= '\u9fff' or '\u3000' <= ch <= '\u303f' or '\uff00' <= ch <= '\uffef':
@@ -101,11 +122,80 @@ def visual_len(text: str) -> int:
 
 
 def pad_visual(text: str, width: int) -> str:
-    """Pad text to a given visual width (CJK chars count as 2)."""
     return text + ' ' * max(0, width - visual_len(text))
 
 
-def run(top_n, min_limit, min_premium, output_json):
+# ------------------------------------------------------------------
+# Server酱 微信推送
+# ------------------------------------------------------------------
+
+def push_to_wechat(sendkey, title, content):
+    """通过 Server酱 推送消息到微信"""
+    import urllib.request
+    data = urllib.parse.urlencode({"title": title, "desp": content}).encode("utf-8")
+    url = f"https://sctapi.ftqq.com/{sendkey}.send"
+    req = urllib.request.Request(url, data=data, method="POST")
+    resp = urllib.request.urlopen(req, timeout=15)
+    result = json.loads(resp.read().decode("utf-8"))
+    if result.get("code") == 0:
+        print(f"  ✅ 微信推送成功: {result.get('data', {}).get('pushid', '')}")
+    else:
+        print(f"  ⚠️ 微信推送失败: {result.get('message', '未知错误')}")
+
+
+def build_push_content(results):
+    """构建推送给微信的文本内容"""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    executables = [r for r in results if r["level"] == "executable"]
+    watches = [r for r in results if r["level"] == "watch"]
+
+    lines = [f"## 套利机会检查 – {now}", ""]
+
+    if not executables and not watches:
+        lines.append("今日无套利机会。")
+        lines.append("")
+        lines.append("| 代码 | 名称 | 溢价 |")
+        lines.append("|------|------|------|")
+        for r in results[:5]:
+            lines.append(f"| {r['code']} | {r['name']} | {fmt_pct(r['premium_pct'])} |")
+        return "\n".join(lines)
+
+    if executables:
+        lines.append(f"### 🟢 可执行机会 ({len(executables)})")
+        lines.append("")
+        for r in sorted(executables, key=lambda x: abs(x["premium_pct"] or 0), reverse=True):
+            direction = "📈溢价" if (r["premium_pct"] or 0) > 0 else "📉折价"
+            lines.append(f"- **{r['name']}** ({r['code']}) {direction} {fmt_pct(r['premium_pct'])} | 限购 {fmt_yuan(r['purchase_limit_yuan'])}")
+        lines.append("")
+
+    if watches:
+        lines.append(f"### 🟡 观察机会 ({len(watches)})")
+        lines.append("")
+        for r in sorted(watches, key=lambda x: abs(x["premium_pct"] or 0), reverse=True):
+            direction = "📈溢价" if (r["premium_pct"] or 0) > 0 else "📉折价"
+            lines.append(f"- {r['name']} ({r['code']}) {direction} {fmt_pct(r['premium_pct'])} | {'  ⚠️ '.join(r['reasons'])}")
+        lines.append("")
+
+    # 简要汇总表
+    rows = results[:15]
+    lines.append("### 📊 溢价/折价汇总（前15）")
+    lines.append("")
+    lines.append("| 代码 | 名称 | 溢价 | 限购 | 结论 |")
+    lines.append("|------|------|------|------|------|")
+    for r in rows:
+        icon = "🟢" if r["level"] == "executable" else ("🟡" if r["level"] == "watch" else "⚪")
+        lines.append(f"| {r['code']} | {r['name']} | {fmt_pct(r['premium_pct'])} | {fmt_yuan(r['purchase_limit_yuan'])} | {icon}{r['level']} |")
+
+    summary = "\n".join(lines)
+    # Server酱 desp 限制 64KB，足够
+    return summary
+
+
+# ------------------------------------------------------------------
+# 核心运行逻辑
+# ------------------------------------------------------------------
+
+def run(top_n, min_limit, min_premium, min_discount, output_json, push_key):
     palmmicro = PalmmicroLofProvider(request_delay=0.5)
     status_provider = EastmoneyFundStatusProvider()
 
@@ -152,7 +242,7 @@ def run(top_n, min_limit, min_premium, output_json):
         prem = get_premium(fund)
         level, reasons = determine_level(
             prem, fund.purchase_limit_yuan, fund.subscription_status,
-            fund.redemption_status, min_limit, min_premium,
+            fund.redemption_status, min_limit, min_premium, min_discount,
         )
         results.append({
             "code": fund.code,
@@ -177,12 +267,17 @@ def run(top_n, min_limit, min_premium, output_json):
 
     if output_json:
         print(json.dumps(results, ensure_ascii=False, indent=2, default=str))
+        if push_key:
+            content = build_push_content(results)
+            title = f"套利机会 {datetime.now().strftime('%m-%d')}"
+            push_to_wechat(push_key, title, content)
         return
 
+    # ---- 终端输出 ----
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     print(f"\n{'=' * 70}")
     print(f"  套利机会检查 – {now}")
-    print(f"  过滤条件: 最低溢价 {min_premium}% | 最低限购 {fmt_yuan(min_limit)}")
+    print(f"  过滤条件: 溢价 ≥{min_premium}% | 折价 ≤{min_discount}% | 最低限购 {fmt_yuan(min_limit)}")
     print(f"{'=' * 70}\n")
 
     executables = [r for r in results if r["level"] == "executable"]
@@ -223,8 +318,14 @@ def run(top_n, min_limit, min_premium, output_json):
 
     print(f"\n{'=' * 70}")
     print(f"  提示: --json 获取完整数据 | --top N 控制数量 | "
-          f"--min-limit N 设置最低限购")
+          f"--min-limit N 设置最低限购 | --push-key SENDKEY 推送微信")
     print(f"{'=' * 70}")
+
+    # 微信推送
+    if push_key:
+        content = build_push_content(results)
+        title = f"套利机会 {datetime.now().strftime('%m-%d')}"
+        push_to_wechat(push_key, title, content)
 
 
 def _print_fund(r):
@@ -249,20 +350,29 @@ def _print_fund(r):
         print(f"    {' ⚠️ '.join(r['reasons'])}")
 
 
+# ------------------------------------------------------------------
+# 入口
+# ------------------------------------------------------------------
+
 def main():
     parser = argparse.ArgumentParser(description="套利机会检查器")
     parser.add_argument("--top", type=int, default=25,
                         help="检查前N只高溢价/折价基金 (默认25)")
-    parser.add_argument("--min-limit", type=float, default=100,
-                        help="最低申购限额 (默认100元)")
-    parser.add_argument("--min-premium", type=float, default=2.0,
-                        help="最低溢价阈值%% (默认2.0)")
+    parser.add_argument("--min-limit", type=float, default=20,
+                        help="最低申购限额 (默认20元)")
+    parser.add_argument("--min-premium", type=float, default=1.5,
+                        help="最低溢价阈值%% (默认1.5)")
+    parser.add_argument("--min-discount", type=float, default=-2.0,
+                        help="最低折价阈值%% (默认-2.0，即折价超过2%%才提醒)")
     parser.add_argument("--json", action="store_true",
                         help="输出JSON格式")
+    parser.add_argument("--push-key", type=str, default=None,
+                        help="Server酱 SendKey，用于推送结果到微信")
     args = parser.parse_args()
     try:
         run(top_n=args.top, min_limit=args.min_limit,
-            min_premium=args.min_premium, output_json=args.json)
+            min_premium=args.min_premium, min_discount=args.min_discount,
+            output_json=args.json, push_key=args.push_key)
     except KeyboardInterrupt:
         print("\n已中断")
         sys.exit(1)
