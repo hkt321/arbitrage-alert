@@ -1,2 +1,1 @@
--r requirements-tdx.txt
--r requirements-api.txt
+# Zero external dependencies — run_check.py only uses Python standard library

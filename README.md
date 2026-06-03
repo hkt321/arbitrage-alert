@@ -1,109 +1,61 @@
 # Arbitrage Alert
 
-套利机会提醒神器，第一阶段目标是做成一个个人可用的网页看板：
+套利机会提醒神器 – CLI 工具，每日监控 LOF / ETF / QDII 等基金的溢价/折价套利机会。
 
-- 监控 LOF / ETF / QDII 等基金的场内价格、估值或净值、溢价率、成交额和交易状态。
-- 支持按溢价率、成交额、价格涨跌幅排序。
-- 支持申购限额、申赎状态、成本、资金占用周期、自选池和提醒规则。
-- 先做提醒，不做自动下单。
+## 数据来源
 
-## MVP 范围
+- 价格、溢价率、份额、盘口：palmmicro.com
+- 申购限额、申赎状态：天天基金（东方财富）
 
-第一版只解决一个问题：在交易时间内快速发现值得关注的高溢价或高折价机会。
+## 使用方式
 
-包含：
+无需安装任何第三方依赖（仅使用 Python 标准库）。
 
-- 一个网页版监控看板。
-- 模拟数据源和统一数据结构。
-- 溢价率、成交额、单日申购限额、申赎状态、状态标签、高亮规则。
-- 基础筛选和排序。
-- 本地浏览器提醒逻辑的前端占位。
+```powershell
+# 查看前 20 只最高溢价/折价的基金
+python -X utf8 tools\run_check.py --top 20
 
-暂不包含：
+# 显示更多（前 50 只）
+python -X utf8 tools\run_check.py --top 50
 
-- 自动交易。
-- 真实资金账户接入。
-- 复杂用户系统。
-- 多人协作权限。
+# 调整最低溢价阈值（默认 2.0%）
+python -X utf8 tools\run_check.py --min-premium 1.5
 
-## 目录
+# 调整最低申购限额（默认 100 元）
+python -X utf8 tools\run_check.py --min-limit 1000
 
-```text
+# JSON 格式输出
+python -X utf8 tools\run_check.py --json
+
+# 组合使用
+python -X utf8 tools\run_check.py --top 30 --min-premium 1.0 --min-limit 500
+```
+
+## 输出说明
+
+结果分为三档：
+
+| 级别 | 图标 | 含义 |
+|------|------|------|
+| executable | 🟢 | 可执行套利（溢价达标 + 申购开放 + 限额足够） |
+| watch | 🟡 | 观察中（溢价高但申购暂停或限额过低） |
+| normal | ⚪ | 正常（溢价未达阈值或无数据） |
+
+## 目录结构
+
+```
 arbitrage-alert/
-  backend/
-    app/
-      config/
-      models/
-      providers/
-    tools/
-  docs/
-    MODULES.md
-    DATA_SOURCE_RESEARCH.md
-    DASHBOARD_GUIDE.md
-    VALUATION_ENGINE.md
-    TDX_INTEGRATION.md
-    PRD.md
-    ARCHITECTURE.md
-    ROADMAP.md
-    TASKS.md
-  web/
-    index.html
-    src/
-      app.js
-      data/
-      domain/
-      ui/
-      styles.css
   tools/
-    tdx_probe.py
+    run_check.py                           ← CLI 入口
+  backend/app/
+    models/                                ← 数据模型
+    providers/                             ← 数据源适配器
+      palmmicro_lof_provider.py             ← palmmicro 行情
+      eastmoney_fund_status_provider.py     ← 天天基金申赎状态
+  docs/                                    ← 文档
 ```
 
-## 设计原则
+## 最低要求
 
-- 数据源、套利规则、页面渲染、提醒渠道分层。
-- 统一内部数据模型，外部行情和公告都先通过适配器清洗。
-- 新增品种、新增数据源、新增提醒渠道时，优先新增模块，不重写核心流程。
-- MVP 也保留清晰边界，避免后续接真实行情时推倒重来。
-
-## 本地预览
-
-第一版是纯静态页面，直接打开：
-
-```text
-web/index.html
-```
-
-## API
-
-Install dependencies:
-
-```powershell
-.\.venv\Scripts\python -m pip install -r requirements.txt
-```
-
-Run local API:
-
-```powershell
-.\.venv\Scripts\python -m uvicorn app.api.main:app --app-dir backend --host 127.0.0.1 --port 8000
-```
-
-Open dashboard:
-
-```text
-http://127.0.0.1:8000/
-```
-
-The dashboard supports browser notifications with a configurable minimum level and cooldown.
-
-Endpoints:
-
-```text
-GET http://127.0.0.1:8000/health
-GET http://127.0.0.1:8000/api/valuation-signals
-GET http://127.0.0.1:8000/api/opportunities
-GET http://127.0.0.1:8000/api/opportunities?refresh=true
-```
-
-`/api/opportunities` uses a short in-memory cache. Add `refresh=true` to force a live refresh.
-
-后续接入真实行情后，再升级为前后端服务。
+- Python 3.9+
+- 无需安装 pip 包
