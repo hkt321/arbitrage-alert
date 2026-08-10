@@ -3,6 +3,11 @@ from pathlib import Path
 
 
 class ManualShortcutTests(unittest.TestCase):
+    def test_launcher_uses_windows_crlf_line_endings(self):
+        launcher = (Path(__file__).parents[1] / "run_lof_alert.cmd").read_bytes()
+
+        self.assertNotIn(b"\n", launcher.replace(b"\r\n", b""))
+
     def test_launcher_reuses_force_trigger_without_secrets(self):
         launcher = (Path(__file__).parents[1] / "run_lof_alert.cmd").read_text(
             encoding="utf-8"
