@@ -40,12 +40,15 @@ python tools\run_check.py --push-key SCTXXXXXXXXXXXXXXXXX
 
 ## GitHub Actions
 
-工作流在每个工作日北京时间 13:17 运行，避开 GitHub Actions 整点调度高峰。计划任务如果在 14:50 后才启动会跳过推送；手动触发不受该窗口限制。需要在仓库 Actions secrets 中配置 `SCT_SENDKEY`；也可以从 Actions 页面手动触发并调整 Top N。
+Windows 任务计划程序在每个工作日北京时间 13:17 运行 `tools/trigger_daily_check.py`，再通过已登录的 GitHub CLI 触发仓库工作流。触发器只在工作日 13:00–14:50 内生效；电脑需要保持开机、登录并联网。GitHub 工作流只保留手动触发，不再使用可能延迟的 `schedule`。
+
+仓库 Actions secrets 需要配置 `SCT_SENDKEY`。也可以从 Actions 页面手动触发并调整 Top N；默认汇总前 15 只。
 
 ## 目录
 
 ```text
 tools/run_check.py                         CLI 和 Server酱推送
+tools/trigger_daily_check.py               Windows 任务计划触发器
 backend/app/models/lof_snapshot.py         轻量 LOF 快照
 backend/app/providers/sina_lof_spot_loader.py  新浪自选池行情加载器
 backend/app/providers/akshare_lof_provider.py  AkShare 数据适配
