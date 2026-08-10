@@ -6,13 +6,13 @@
 
 ## 数据来源
 
-- 标准库小分页加载器：从东方财富公开接口获取 LOF 市场行情，每页固定 20 条并校验完整性
+- [easyquotation](https://github.com/shidenggui/easyquotation) 新浪适配器：批量获取 `config/lof_watchlist.json` 中的 LOF 场内行情
 - [AkShare](https://github.com/akfamily/akshare) `fund_purchase_em()`：最新官方净值、净值日期、申购赎回状态、限额和费率
-- 两条数据链均不需要 API Key；任一链路返回不完整时，本次检查失败且不推送
+- 两条数据链均不需要 API Key；自选代码缺失、价格无效、行情超过 5 分钟或任一链路返回不完整时，本次检查失败且不推送
 
 ## 安装与运行
 
-要求 Python 3.9+。项目唯一的直接依赖是固定版本的 AkShare。
+要求 Python 3.9+。项目直接依赖固定版本的 AkShare 和 easyquotation。
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -22,6 +22,8 @@ python tools\run_check.py --min-premium 1.0 --min-discount -1.5 --min-limit 100
 python tools\run_check.py --json
 python tools\run_check.py --push-key SCTXXXXXXXXXXXXXXXXX
 ```
+
+编辑 `config/lof_watchlist.json` 可以增删自选 LOF。代码使用六位数字格式，例如 `501018`、`161129`；系统只检查这份自选池，不再自动扫描全市场目录。
 
 ## 参数
 
@@ -45,7 +47,8 @@ python tools\run_check.py --push-key SCTXXXXXXXXXXXXXXXXX
 ```text
 tools/run_check.py                         CLI 和 Server酱推送
 backend/app/models/lof_snapshot.py         轻量 LOF 快照
-backend/app/providers/eastmoney_lof_spot_loader.py  小分页行情加载器
+backend/app/providers/sina_lof_spot_loader.py  新浪自选池行情加载器
 backend/app/providers/akshare_lof_provider.py  AkShare 数据适配
+config/lof_watchlist.json                   LOF 自选池
 tests/                                     标准库 unittest 测试
 ```

@@ -29,7 +29,11 @@ python tools/run_check.py --min-premium 3.0 --min-discount -3.0 --min-limit 500
 
 输出同时包含 `nav_date` 和 `premium_basis=latest_official_nav`。如果某只基金有行情但没有对应净值资料，它会保留在结果中并标记为 `unknown`。
 
-行情由标准库加载器从东方财富公开接口每页获取 20 条并校验总数；AkShare 负责获取最新官方净值和申赎状态。公开接口不承诺实时性或稳定性。接口返回空表、缺页、缺少必要字段或出现重复代码时，命令会以非零状态退出，且不会发送微信通知。
+行情通过 easyquotation 的新浪适配器批量读取 `config/lof_watchlist.json`；AkShare 负责获取最新官方净值和申赎状态。公开接口不承诺实时性或稳定性。自选代码缺失、价格无效、行情超过 5 分钟，或净值/申赎表为空、缺少必要字段、出现重复代码时，命令会以非零状态退出，且不会发送微信通知。
+
+## 自选池
+
+编辑 `config/lof_watchlist.json` 中的 `codes` 数组即可增删基金。每个代码必须是六位数字；系统只检查明确列出的代码，不自动扫描全市场目录。
 
 ## 微信推送
 

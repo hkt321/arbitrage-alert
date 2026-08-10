@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Any, Callable
 
 from ..models.lof_snapshot import LofSnapshot
-from .eastmoney_lof_spot_loader import EastmoneyLofSpotLoader
 from .errors import DataSourceError
+from .sina_lof_spot_loader import SinaLofSpotLoader
 
 
 class AkshareLofProvider:
@@ -32,7 +32,7 @@ class AkshareLofProvider:
         spot_loader: Callable[[], Any] | None = None,
         purchase_loader: Callable[[], Any] | None = None,
     ) -> None:
-        self._spot_loader = spot_loader or EastmoneyLofSpotLoader().fetch_all
+        self._spot_loader = spot_loader or SinaLofSpotLoader().fetch_all
         if purchase_loader is None:
             import akshare as ak
 
@@ -81,6 +81,7 @@ class AkshareLofProvider:
                     subscription_status=self._map_subscription(status.get("申购状态")) if status is not None else "unknown",
                     redemption_status=self._map_redemption(status.get("赎回状态")) if status is not None else "unknown",
                     fee_pct=self._percentage(status.get("手续费")) if status is not None else None,
+                    source="sina_quote+akshare_eastmoney_nav",
                     observed_at=observed_at,
                 )
             )

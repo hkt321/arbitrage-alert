@@ -7,7 +7,7 @@ from backend.app.providers.akshare_lof_provider import AkshareLofProvider, DataS
 
 
 class AkshareLofProviderTests(unittest.TestCase):
-    def test_default_provider_uses_small_page_quote_loader(self):
+    def test_default_provider_uses_sina_watchlist_quote_loader(self):
         spot = pd.DataFrame(
             [
                 {
@@ -37,7 +37,7 @@ class AkshareLofProviderTests(unittest.TestCase):
         )
 
         with patch(
-            "backend.app.providers.akshare_lof_provider.EastmoneyLofSpotLoader"
+            "backend.app.providers.akshare_lof_provider.SinaLofSpotLoader"
         ) as loader_type, patch("akshare.fund_purchase_em", return_value=purchase):
             loader_type.return_value.fetch_all.return_value = spot
             snapshot = AkshareLofProvider().fetch_all()[0]
