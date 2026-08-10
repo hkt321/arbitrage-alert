@@ -10,12 +10,23 @@ import json
 import os
 import sys
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from app.providers.akshare_lof_provider import AkshareLofProvider, DataSourceError
+
+
+SHANGHAI = ZoneInfo("Asia/Shanghai")
+
+
+def beijing_now(instant: datetime | None = None) -> datetime:
+    instant = instant or datetime.now(timezone.utc)
+    if instant.tzinfo is None:
+        instant = instant.replace(tzinfo=timezone.utc)
+    return instant.astimezone(SHANGHAI)
 
 
 def fmt_pct(value: float | None, digits: int = 2) -> str:
@@ -128,8 +139,10 @@ def push_to_wechat(sendkey: str, title: str, content: str) -> None:
         print(f"  微信推送异常: {exc}")
 
 
-def build_push_content(results: list[dict[str, Any]]) -> str:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+def build_push_content(
+    results: list[dict[str, Any]], instant: datetime | None = None
+) -> str:
+    now = beijing_now(instant).strftime("%Y-%m-%d %H:%M")
     watches = [item for item in results if item["level"] == "watch"]
     lines = [
         f"## LOF 关注提醒 – {now}",
@@ -162,16 +175,17 @@ def build_push_content(results: list[dict[str, Any]]) -> str:
             f" | {'；'.join(item['reasons'])}"
         )
 
+    displayed_count = min(15, len(results))
     lines.extend(
         [
             "",
-            "### 汇总（前15）",
+            f"### 汇总（前{displayed_count}，本次共{len(results)}只）",
             "",
             "| 代码 | 名称 | 溢价/折价 | 净值日期 | 结论 |",
             "|------|------|-----------|----------|------|",
         ]
     )
-    for item in results[:15]:
+    for item in results[:displayed_count]:
         lines.append(
             f"| {item['code']} | {item['name']} | {fmt_pct(item['premium_pct'])}"
             f" | {item.get('nav_date') or '-'} | {item['level']} |"
@@ -185,7 +199,7 @@ def _print_terminal(
     min_premium: float,
     min_discount: float,
 ) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = beijing_now().strftime("%Y-%m-%d %H:%M")
     print(f"\n{'=' * 88}")
     print(f"LOF 关注提醒 – {now}")
     print(
@@ -233,7 +247,7 @@ def run(
         push_func = push_func or push_to_wechat
         push_func(
             push_key,
-            f"LOF 关注提醒 {datetime.now().strftime('%m-%d')}",
+            f"LOF 关注提醒 {beijing_now().strftime('%m-%d')}",
             build_push_content(results),
         )
     return results
