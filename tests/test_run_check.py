@@ -2,6 +2,7 @@ import io
 import json
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from backend.app.models.lof_snapshot import LofSnapshot
@@ -46,6 +47,46 @@ class ReminderLevelTests(unittest.TestCase):
 
 
 class PushContentTests(unittest.TestCase):
+    def test_summary_heading_reports_displayed_and_total_counts(self):
+        results = [
+            {
+                "code": f"SH50100{index}",
+                "name": f"测试基金{index}",
+                "latest_nav": 1.0,
+                "nav_date": "2026-08-08",
+                "premium_pct": float(index),
+                "level": "watch",
+                "reasons": ["基于最新官方净值"],
+            }
+            for index in range(1, 6)
+        ]
+
+        content = build_push_content(
+            results,
+            instant=datetime(2026, 8, 10, 3, 11, tzinfo=timezone.utc),
+        )
+
+        self.assertIn("### 汇总（前5，本次共5只）", content)
+        self.assertNotIn("### 汇总（前15）", content)
+
+    def test_push_content_converts_utc_instant_to_beijing_time(self):
+        content = build_push_content(
+            [
+                {
+                    "code": "SH501001",
+                    "name": "测试基金",
+                    "latest_nav": 1.0,
+                    "nav_date": "2026-08-08",
+                    "premium_pct": 20.0,
+                    "level": "watch",
+                    "reasons": ["基于最新官方净值"],
+                }
+            ],
+            instant=datetime(2026, 8, 10, 3, 11, tzinfo=timezone.utc),
+        )
+
+        self.assertIn("2026-08-10 11:11", content)
+
     def test_push_identifies_watch_only_official_nav_basis(self):
         content = build_push_content(
             [

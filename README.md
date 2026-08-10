@@ -23,7 +23,7 @@ python tools\run_check.py --json
 python tools\run_check.py --push-key SCTXXXXXXXXXXXXXXXXX
 ```
 
-编辑 `config/lof_watchlist.json` 可以增删自选 LOF。代码使用六位数字格式，例如 `501018`、`161129`；系统只检查这份自选池，不再自动扫描全市场目录。
+编辑 `config/lof_watchlist.json` 可以增删自选 LOF。初始自选池为上一版最近一次成功运行的前 15 只；代码使用六位数字格式，例如 `501018`、`161129`。系统只检查这份自选池，不再自动扫描全市场目录。
 
 ## 参数
 
@@ -40,7 +40,7 @@ python tools\run_check.py --push-key SCTXXXXXXXXXXXXXXXXX
 
 ## GitHub Actions
 
-工作流在每个工作日北京时间 14:00 运行。需要在仓库 Actions secrets 中配置 `SCT_SENDKEY`；也可以从 Actions 页面手动触发并调整 Top N。
+工作流在每个工作日北京时间 13:17 运行，避开 GitHub Actions 整点调度高峰。计划任务如果在 14:50 后才启动会跳过推送；手动触发不受该窗口限制。需要在仓库 Actions secrets 中配置 `SCT_SENDKEY`；也可以从 Actions 页面手动触发并调整 Top N。
 
 ## 目录
 
