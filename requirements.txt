@@ -1,1 +1,2 @@
-# Zero external dependencies — run_check.py only uses Python standard library
+akshare==1.18.83
+easyquotation==0.7.7
