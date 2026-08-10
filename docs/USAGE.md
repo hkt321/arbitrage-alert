@@ -1,70 +1,40 @@
-# 套利机会检查器使用说明
+# LOF 关注提醒使用说明
 
 ## 基础用法
 
 ```powershell
-# 查看前 25 只高溢价/折价基金（默认）
-python -X utf8 tools/run_check.py
-
-# 查看前 N 只
-python -X utf8 tools/run_check.py --top 10
-python -X utf8 tools/run_check.py --top 30
+python -m pip install -r requirements.txt
+python tools/run_check.py
+python tools/run_check.py --top 30
+python tools/run_check.py --json
 ```
 
-## 过滤条件
+## 自定义阈值
 
 ```powershell
-# 设置最低溢价阈值（默认 2.0%）
-python -X utf8 tools/run_check.py --min-premium 3.0
-
-# 设置最低申购限额（默认 100 元，低于此值不展示为可执行）
-python -X utf8 tools/run_check.py --min-limit 500
-
-# 同时设置
-python -X utf8 tools/run_check.py --top 15 --min-premium 3.0 --min-limit 1000
+python tools/run_check.py --min-premium 3.0 --min-discount -3.0 --min-limit 500
 ```
 
-## JSON 输出
+- 溢价达到阈值时，输出会同时提示申购状态和限额情况。
+- 折价达到阈值时，只参考赎回状态，不使用申购限额判断。
+- 达到阈值统一标记为 `watch`，不会被描述为可执行交易。
+
+## 数据口径
+
+溢价率计算公式：
+
+```text
+(场内最新价 - 最新官方净值) / 最新官方净值 × 100%
+```
+
+输出同时包含 `nav_date` 和 `premium_basis=latest_official_nav`。如果某只基金有行情但没有对应净值资料，它会保留在结果中并标记为 `unknown`。
+
+行情由标准库加载器从东方财富公开接口每页获取 20 条并校验总数；AkShare 负责获取最新官方净值和申赎状态。公开接口不承诺实时性或稳定性。接口返回空表、缺页、缺少必要字段或出现重复代码时，命令会以非零状态退出，且不会发送微信通知。
+
+## 微信推送
 
 ```powershell
-# 导出 JSON 供其他工具处理
-python -X utf8 tools/run_check.py --json
-
-# 保存到文件
-python -X utf8 tools/run_check.py --json > opportunity.json
+python tools/run_check.py --top 30 --push-key SCTXXXXXXXXXXXXXXXXX
 ```
 
-## 输出解读
-
-### 机会级别
-
-| 级别 | 图标 | 含义 |
-|------|------|------|
-| 可执行 | 🟢 绿色 | 溢价≥阈值 + 申购开放 + 额度足够 |
-| 观察 | 🟡 黄色 | 溢价高但申购暂停/限额过低 |
-| 普通 | ⚪ 灰色 | 溢价未达阈值或无数据 |
-
-### 汇总表字段
-
-| 字段 | 说明 |
-|------|------|
-| 代码 | SH=上交所 SZ=深交所 |
-| 名称 | 基金名称 |
-| 溢价 | 实时估值溢价/折价百分比 |
-| 限购 | 单日申购限额（元） |
-| 份额 | 场内总份额（万份） |
-| 新增 | 当日新增份额（万份），负值为减少 |
-| 结论 | 机会级别 |
-
-### 套利方向
-
-- **📈 溢价套利**：场内价格 > 估值，场外申购 → T+N天后场内卖出
-- **📉 折价套利**：场内价格 < 估值，场内买入 → 场外赎回
-
-## 注意事项
-
-1. 数据从 `palmmicro.com` 抓取，有 ~0.5 秒/次的请求间隔避免被限流
-2. 申购限额数据来自天天基金，盘中可能滞后
-3. 折价品种目前全部标记为"观察"，因为折价套利需要确认赎回通道正常
-4. QDII 基金溢价率含估值误差，实际可交易空间可能更小
-5. 建议每天下午 2 点左右运行一次
+不要把 SendKey 写进代码或提交到 Git。GitHub Actions 使用仓库 secret `SCT_SENDKEY`。
