@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Trigger the GitHub LOF workflow from Windows Task Scheduler."""
 
+import argparse
 import shutil
 import subprocess
 import sys
@@ -25,11 +26,14 @@ WINDOW_END = time(14, 50)
 
 def trigger_daily_check(
     now: Optional[datetime] = None,
+    force: bool = False,
     find_executable: Callable[[str], Optional[str]] = shutil.which,
     run_command: Callable[[list[str]], Any] = subprocess.run,
 ) -> int:
     now = now or datetime.now()
-    if now.weekday() >= 5 or not (WINDOW_START <= now.time() <= WINDOW_END):
+    if not force and (
+        now.weekday() >= 5 or not (WINDOW_START <= now.time() <= WINDOW_END)
+    ):
         print(f"跳过：当前时间 {now:%Y-%m-%d %H:%M} 不在工作日 13:00-14:50")
         return 0
 
@@ -42,10 +46,19 @@ def trigger_daily_check(
     result = run_command(command)
     if result.returncode != 0:
         print(f"触发失败：gh 返回 {result.returncode}", file=sys.stderr)
+    elif force:
+        print("请求已提交，微信稍后更新。")
     else:
         print(f"已触发：{now:%Y-%m-%d %H:%M} 前15 LOF 工作流")
     return int(result.returncode)
 
 
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
+    return trigger_daily_check(force=args.force)
+
+
 if __name__ == "__main__":
-    sys.exit(trigger_daily_check())
+    sys.exit(main())
