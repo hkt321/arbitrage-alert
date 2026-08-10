@@ -2,10 +2,25 @@ import unittest
 from datetime import datetime
 from types import SimpleNamespace
 
-from tools.trigger_daily_check import trigger_daily_check
+from tools.trigger_daily_check import WORKFLOW_COMMAND, trigger_daily_check
 
 
 class TriggerDailyCheckTests(unittest.TestCase):
+    def test_force_mode_triggers_once_outside_automatic_window(self):
+        calls = []
+
+        exit_code = trigger_daily_check(
+            now=datetime(2026, 8, 9, 18, 0),
+            force=True,
+            find_executable=lambda _: r"C:\Program Files\GitHub CLI\gh.exe",
+            run_command=lambda command: calls.append(command)
+            or SimpleNamespace(returncode=0),
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][1:], WORKFLOW_COMMAND)
+
     def test_triggers_master_workflow_once_during_weekday_window(self):
         calls = []
 
